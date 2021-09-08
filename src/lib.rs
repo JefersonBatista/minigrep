@@ -1,9 +1,19 @@
 use std::env;
 use std::error::Error;
 use std::fs;
+use std::io;
+use std::io::Read;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.filename)?;
+    let mut contents = if config.filename.is_empty() {
+        String::new()
+    } else {
+        fs::read_to_string(&config.filename)?
+    };
+
+    if config.filename.is_empty() {
+        io::stdin().read_to_string(&mut contents)?;
+    }
 
     let results = if config.case_sensitive {
         search(&config.query, &contents)
@@ -26,12 +36,16 @@ pub struct Config {
 
 impl Config {
     pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
+        if args.len() < 2 {
             return Err("not enough arguments");
         }
 
         let query = args[1].clone();
-        let filename = args[2].clone();
+        let filename = if args.len() < 3 {
+            String::new()
+        } else {
+            args[2].clone()
+        };
 
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
