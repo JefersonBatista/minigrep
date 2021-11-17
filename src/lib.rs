@@ -5,15 +5,14 @@ use std::io;
 use std::io::Read;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let mut contents = if config.filename.is_empty() {
-        String::new()
-    } else {
-        fs::read_to_string(&config.filename)?
+    let contents = match config.filename {
+        None => {
+            let mut stdin_contents = String::new();
+            io::stdin().read_to_string(&mut stdin_contents)?;
+            stdin_contents
+        }
+        Some(filename) => fs::read_to_string(&filename)?,
     };
-
-    if config.filename.is_empty() {
-        io::stdin().read_to_string(&mut contents)?;
-    }
 
     let results = if config.case_sensitive {
         search(&config.query, &contents)
@@ -30,7 +29,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
 pub struct Config {
     pub query: String,
-    pub filename: String,
+    pub filename: Option<String>,
     pub case_sensitive: bool,
 }
 
@@ -42,9 +41,9 @@ impl Config {
 
         let query = args[1].clone();
         let filename = if args.len() < 3 {
-            String::new()
+            None
         } else {
-            args[2].clone()
+            Some(args[2].clone())
         };
 
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();

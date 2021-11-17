@@ -1,4 +1,3 @@
-use minigrep;
 use std::env;
 use std::process;
 
